@@ -58,35 +58,41 @@ function drop(event) {
     event.preventDefault();
     let data = event.dataTransfer.getData('text');
     let task = document.getElementById(data);
+
     if (event.target.className.includes('section')) {
         event.target.appendChild(task);
     } else if (event.target.parentElement.className.includes('section')) {
         event.target.parentElement.appendChild(task);
     }
+
     if (event.target.id === 'completed') {
         moveToCompleted(task);
+    } else if (event.target.id === 'in-progress') {
+        moveToInProgress(task);
     } else {
         updateTaskButton(task, event.target.id);
     }
 }
 
-
 function updateTaskButton(task, sectionId) {
     let button = task.querySelector('button');
+
     if (sectionId === 'in-progress') {
-        button.innerText = 'Complete';
-        button.onclick = () => moveToCompleted(task);
+        button.innerText = 'In Progress';
+        button.onclick = () => moveToCompleted(task); // Change action to move to Completed
+        button.disabled = false; // Enable the button for further actions
     } else if (sectionId === 'completed') {
-        button.remove();
+        button.remove(); // Remove the button when the task is completed
         let timestamp = document.createElement('div');
         timestamp.className = 'timestamp';
         let now = new Date();
         let formattedDate = now.toLocaleDateString('en-GB') + ', ' + now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
         timestamp.innerText = formattedDate;
         task.appendChild(timestamp);
-    } else {
+    } else if (sectionId === 'pending') {
         button.innerText = 'Start';
-        button.onclick = () => moveToInProgress(task);
+        button.onclick = () => moveToInProgress(task); // Re-enable the move to In Progress
+        button.disabled = false; // Ensure the button is enabled in the pending section
     }
 }
 
@@ -97,16 +103,17 @@ function moveToInProgress(task) {
 
 function moveToCompleted(task) {
     let now = new Date();
-    let dueDate = new Date(task.querySelector('.task-due-date').innerText.split(' ')[1]); // Extract due date from the task
-    if (now <= dueDate) {
+    let dueDateElem = task.querySelector('.task-due-date');
+    let dueDate = dueDateElem ? new Date(dueDateElem.innerText.split('Due: ')[1]) : null;
+
+    if (dueDate && now <= dueDate) {
         alert(`You completed the task before time! Great job!`);
-    } else {
+    } else if (dueDate) {
         alert(`You completed the task late! Procrastination is never a good habit, but at least you completed it.`);
     }
     document.getElementById('completed').appendChild(task);
     updateTaskButton(task, 'completed');
 }
-
 
 function checkDueDate(task, dueDate) {
     let now = new Date();
